@@ -9,6 +9,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.net.URI;
+
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -40,6 +42,30 @@ class CashCardApplicationTests {
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 		assertThat(response.getBody()).isBlank();
+	}
+
+	@Test
+	void shouldCreateANewCashCard(){
+		CashCard cashCard = new CashCard(null, 234.56);
+
+		ResponseEntity<Void> createResponse = restTemplate.postForEntity("/cashcards", cashCard, Void.class);
+
+		assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+		URI location = createResponse.getHeaders().getLocation();
+
+		ResponseEntity<String> getResponse = restTemplate.getForEntity(location, String.class);
+		assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		DocumentContext documentContext = JsonPath.parse(getResponse.getBody());
+
+
+		Number id = documentContext.read("$.id");
+		Double amount = documentContext.read("$.amount");
+
+		assertThat(id).isNotNull();
+		assertThat(amount).isEqualTo(234.56);
+
 	}
 
 }
