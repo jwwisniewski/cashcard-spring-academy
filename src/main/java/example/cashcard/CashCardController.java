@@ -36,10 +36,9 @@ public class CashCardController {
     }
 
     private Optional<CashCard> getOptionalCashCard(Long requestedId, Principal principal) {
-        Optional<CashCard> cashCardOptional = Optional.ofNullable(
+        return Optional.ofNullable(
                 cashCardRepository.findByIdAndOwner(requestedId, principal.getName())
         );
-        return cashCardOptional;
     }
 
     @PostMapping
@@ -58,8 +57,7 @@ public class CashCardController {
     private CashCard createCashCardFromRequestDataAndSave(CashCard cashCardRequest, Principal principal, Long id) {
         CashCard newCashCard = new CashCard(id, cashCardRequest.amount(), principal.getName());
 
-        CashCard savedCashCard = cashCardRepository.save(newCashCard);
-        return savedCashCard;
+        return cashCardRepository.save(newCashCard);
     }
 
     @GetMapping
@@ -91,13 +89,13 @@ public class CashCardController {
         return ResponseEntity.notFound().build();
     }
 
-    @DeleteMapping("/{id}")
-    private ResponseEntity<Void> deleteCashCard(@PathVariable Long id, Principal principal) {
-        if (!cashCardRepository.existsByIdAndOwner(id, principal.getName())) {
+    @DeleteMapping("/{requestedId}")
+    private ResponseEntity<Void> deleteCashCard(@PathVariable Long requestedId, Principal principal) {
+        if (getOptionalCashCard(requestedId, principal).isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
-        cashCardRepository.deleteById(id);
+        cashCardRepository.deleteById(requestedId);
         return ResponseEntity.noContent().build();
     }
 
