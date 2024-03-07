@@ -10,4 +10,5 @@ interface CashCardRepository
         PagingAndSortingRepository<CashCard, Long> {
     CashCard findByIdAndOwner(Long id, String owner);
     Page<CashCard> findAllByOwner(String owner, PageRequest pageRequest);
+    boolean existsByIdAndOwner(Long id, String owner);
 }
