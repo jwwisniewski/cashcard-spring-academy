@@ -26,10 +26,7 @@ public class CashCardController {
     @GetMapping("/{requestedId}")
     private ResponseEntity<CashCard> findById(@PathVariable Long requestedId, Principal principal
     ) {
-
-        Optional<CashCard> cashCardOptional = Optional.ofNullable(
-                cashCardRepository.findByIdAndOwner(requestedId, principal.getName())
-        );
+        Optional<CashCard> cashCardOptional = getOptionalCashCard(requestedId, principal);
 
         if (cashCardOptional.isPresent()) {
             return ResponseEntity.ok(cashCardOptional.get());
@@ -38,15 +35,30 @@ public class CashCardController {
         return ResponseEntity.notFound().build();
     }
 
+    private Optional<CashCard> getOptionalCashCard(Long requestedId, Principal principal) {
+        Optional<CashCard> cashCardOptional = Optional.ofNullable(
+                cashCardRepository.findByIdAndOwner(requestedId, principal.getName())
+        );
+        return cashCardOptional;
+    }
+
     @PostMapping
     private ResponseEntity<Void> createCashCard(@RequestBody CashCard cashCardRequest, UriComponentsBuilder ucb, Principal principal) {
-        CashCard newCashCard = new CashCard(null, cashCardRequest.amount(), principal.getName());
-
-        CashCard savedCashCard = cashCardRepository.save(newCashCard);
+        CashCard savedCashCard = createCashCardFromRequestDataAndSave(cashCardRequest, principal);
         URI location = ucb.path("cashcards/{id}").buildAndExpand(savedCashCard.id()).toUri();
 
         return ResponseEntity.created(location).build();
 
+    }
+
+    private CashCard createCashCardFromRequestDataAndSave(CashCard cashCardRequest, Principal principal) {
+        return createCashCardFromRequestDataAndSave(cashCardRequest, principal, null);
+    }
+    private CashCard createCashCardFromRequestDataAndSave(CashCard cashCardRequest, Principal principal, Long id) {
+        CashCard newCashCard = new CashCard(id, cashCardRequest.amount(), principal.getName());
+
+        CashCard savedCashCard = cashCardRepository.save(newCashCard);
+        return savedCashCard;
     }
 
     @GetMapping
@@ -60,6 +72,22 @@ public class CashCardController {
         );
 
         return ResponseEntity.ok(page.getContent());
+    }
+
+    @PutMapping("/{requestedId}")
+    private ResponseEntity<CashCard> putCashCard(@PathVariable Long requestedId
+            , @RequestBody CashCard cashCardRequest
+            , Principal principal
+    ) {
+        Optional<CashCard> cashCardOptional = getOptionalCashCard(requestedId, principal);
+
+        if (cashCardOptional.isPresent()) {
+            CashCard cashCardOriginal = cashCardOptional.get();
+            createCashCardFromRequestDataAndSave(cashCardRequest, principal, cashCardOriginal.id());
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.notFound().build();
     }
 
 }
